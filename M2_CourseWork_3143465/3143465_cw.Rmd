@@ -1,0 +1,245 @@
+---
+title: "Essentials of Mathematics and Statistics: Coursework"
+author: "Student ID: <3143465>"
+date: today
+format:
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+    code-fold: false
+execute:
+  warning: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(tidyverse)
+
+# Load your own functions. All functions asked for in the questions must be
+# defined in cw_functions.R and submitted with this file.
+source("3143465_cw_functions.R")
+```
+
+```{=html}
+<!-- Delete this guidance text and complete your coursework below.
+
+SUBMIT ALL THREE FILES TOGETHER ON CANVAS:
+  1. this file (.qmd), with your answers
+  2. the rendered report (.html or .pdf) produced from this file
+  3. cw_functions.R, with every function the questions ask for
+  (plus a file with your prompts and generated code if you used AI)
+Do not upload the data file. -->
+```
+
+<!-- Keep the data file in a folder called data/ next to this file. -->
+
+## AI use statement
+
+```{=html}
+<!-- State whether you used AI tools to generate code. If you did, include
+the prompts you used and the code that was generated. -->
+```
+
+# Simulation: The Frog on the Lily Pads
+
+## Question 1 (a) code comment
+
+```{r}
+#Define function named hop, while input is the initial position, setting up probability of going right as 0.5.
+hop <- function(position, p_right = 0.5) {
+  #Set up from going either -1 or 1, missing number of trials(size), defined probability going left as 1- 0.5.
+  step <- sample(c(-1, 1), prob = c(p_right, 1 - p_right))
+  #update the new position
+  position + step
+  #return function
+  return(position)
+}
+#Testing with calling function hop with value 4 as initial
+hop(4)
+
+```
+
+## Question 1 (b) Updating Code
+```{r}
+  #setting up initial position in the function
+hop <- function(position = 4, p_right = 0.5) {
+  #Picking random number from -1 or 1 for next direction, and probability of going right is 0.5, with left as 1-0.5=0.5
+  step <- sample(c(-1, 1),
+                 size =1, 
+                 prob = c(1-p_right,p_right))
+  #update the new position, name new position as new_position for better tracking
+  new_position <- position+ step
+  #return function
+  return(new_position)
+}
+
+hop()
+```
+
+## Question 2 Simulating a full game
+```{r}
+
+play_frog()
+
+
+```
+
+## Question 3(a) Repeated games
+```{r 3a}
+#Get result stored into Result_03
+results_Q3<- simulate_frogs(n_sims= 1000)
+
+#Display the result of frog_stats
+results_Q3$frog_stats
+
+```
+## Question 3(b) Repeated games CI Calculations
+```{r 3bCI}
+#finding 95% CI and Histogram
+nbankr <- sum(results_Q3$banks == "right",na.rm = TRUE)
+n_total <- length(results_Q3$banks)
+p_right_bank <- nbankr/ n_total
+#using binomial testing with nbankr as x and ntotal as y
+ci<- binom.test(
+  x = nbankr,
+  n = n_total,
+  conf.level = 0.95
+)
+
+lower_ci = ci$conf.int[1]
+upper_ci = ci$conf.int[2]
+
+c(p_right_bank = p_right_bank, lower_ci = lower_ci, upper_ci = upper_ci)
+```
+## Question 3(c) Repeated games Histogram Plotting
+```{r 3cplotting}
+hist(
+  results_Q3$hops_vector,
+  main = "Histogram of 1000 Games",
+  xlab = "Number of hops to ends the game"
+)
+
+```
+## Question 4(a) Changing the starting pad from 1-7
+```{r 4a}
+#lets set up value n for startpads from 1-7
+n_startpads=1:7
+#set up a list for Q4 result for storing the result, or else it wont be recorded
+results_Q4= list()
+#loop simulate_frogs from n=1 to n=7, and print result after every cycles
+for (n in n_startpads){
+  results_Q4[[n]] <- simulate_frogs(n_sims = 1000, 
+                               start = n)
+  print(results_Q4[[n]]$frog_stats)
+}
+
+
+```
+## Question 4(b) Plot the proportion of games ending on the right bank against the starting pad.
+```{r}
+#get result from previous section, store it as the proportion of games ends on the right bank
+#make p_right_bank a 7 digit vector for calculations
+p_right_bank<- numeric(7)
+#take values from hops 1-7, loop it
+for (n in 1:7) {
+  p_right_bank[n] <- results_Q4[[n]]$frog_stats["p_right_bank"]
+}
+
+plot(x = 1:7,
+     y = p_right_bank,
+     type = "b",
+     col = "red",
+     main = "Games ends on Right Bank against starting pad 1-7",
+     xlab = "Starting Pads",
+     ylab = "Proportion of games ending on the right bank")
+```
+## Question 4(c) Plot the mean number of hops against the starting pad.
+```{r}
+##make mean_hops a 7 digit vector for calculations
+mean_hops <- numeric(7)
+#loop again for taking out values
+for (n in 1:7) {
+  mean_hops[n] <- results_Q4[[n]]$frog_stats["mean_hops"]
+}
+#plot again
+plot(x = 1:7,
+     y = mean_hops,
+     type = "b",
+     col = "red",
+     main = "Mean Hops against starting pad 1-7",
+     xlab = "Starting Pads",
+     ylab = "Mean Hops")
+
+```
+## Question 4(d) Add error bars to both plots, showing 95% confidence intervals for the proportions and standard errors for the mean numbers of hops.
+```{r 4d}
+
+
+
+```
+
+## Question 5
+```{r}
+
+```
+
+# Data Analysis: Maternal Health Risk
+
+```{r}
+#| label: load-data
+load("data/assess_data_1226.Rdata")
+```
+
+## Question 6
+```{r 6aCodeComment}
+load("data/assess_data_1226.Rdata")
+str(mh_data)
+sum(duplicated(mh_data$age))
+
+mh_data$high_risk <- mh_data$risk_level == "high"
+table(mh_data$high_risk)
+
+boxplot(bs ~ high_risk, data = mh_data)
+
+fit <- glm(high_risk ~ bs + systolic_bp, family = binomial)
+summary(fit)
+exp(coef(fit))
+
+or_ci <- confint.default(fit)
+or_ci
+```
+
+```{r 6bCodeUpdate}
+load("data/assess_data_1226.Rdata")
+str(mh_data)
+sum(duplicated(mh_data$age))
+
+mh_data$high_risk <- mh_data$risk_level == "high"
+table(mh_data$high_risk)
+
+boxplot(bs ~ high_risk, data = mh_data)
+
+fit <- glm(high_risk ~ bs + systolic_bp, family = binomial)
+summary(fit)
+exp(coef(fit))
+
+or_ci <- confint.default(fit)
+or_ci
+
+```
+
+## Question 7
+```{r}
+
+```
+
+## Question 8
+```{r}
+
+```
+## Question 9
+```{r}
+
+```
