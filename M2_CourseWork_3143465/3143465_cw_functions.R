@@ -93,5 +93,64 @@ simulate_frogs <- function(n_sims, start = 4,
   
 }
 
+#Q4b Plot the proportion of games ending on the right bank against the starting pad
+plot_rb4b <- function(results_Q4){
+  #get result from previous section, store it as the proportion of games ends on the right bank
+  #make p_right_bank a 7 digit vector for calculations
+  p_right_bank<- numeric(7)
+  #take values from hops 1-7, loop it
+  for (n in 1:7) {
+    p_right_bank[n] <- results_Q4[[n]]$frog_stats["p_right_bank"]
+  }
 
+  plot(x = 1:7,
+       y = p_right_bank,
+       type = "b",
+       col = "red",
+       main = "Games ends on Right Bank against starting pad 1-7",
+       xlab = "Starting Pads",
+       ylab = "Proportion of games ending on the right bank")
+}
+
+#Q4c Plot the mean number of hops against the starting pad
+plot_rb4c <-function(results_Q4){
+  ##make mean_hops a 7 digit vector for calculations
+  mean_hops <- numeric(7)
+  #loop again for taking out values
+  for (n in 1:7) {
+    mean_hops[n] <- results_Q4[[n]]$frog_stats["mean_hops"]
+  }
+  #plot again
+  plot(x = 1:7,
+       y = mean_hops,
+       type = "b",
+       col = "red",
+       main = "Mean Hops against starting pad 1-7",
+       xlab = "Starting Pads",
+       ylab = "Mean Hops")
+}
+
+clean_maternal <- function(data){
+  #count and drop duplicated record
+  duplicates <- sum(duplicated(data))
+  data <- data[!duplicated(data), ]
+  #log for removed values
+  cat("Removed duplicates:",duplicates, "\n")
+  
+  #get number of counting non physiologically plausible data
+  n0 = sum(data$body_temp == 0 | data$heart_rate == 0, na.rm = TRUE)
+  #filtering for non physiologically plausible data
+  data <- data[data$body_temp != 0 & data$heart_rate != 0,]
+  #log for removed values
+  cat("Non Physiologically Plausible Data Removed:",n0, "\n")
+  
+  #store risk_level and site as factor
+  data$risk_level <- as.factor(data$risk_level)
+  data$site <- as.factor(data$site)
+  
+  #get data with "high risk" to TRUE
+  data$high_risk <- data$risk_level == "high risk"
+  return(data)
+  
+}
 

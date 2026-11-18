@@ -44,7 +44,7 @@ the prompts you used and the code that was generated. -->
 
 # Simulation: The Frog on the Lily Pads
 
-## Question 1 (a) code comment
+## Question 1 (a) Code Comment
 
 ```{r}
 #Define function named hop, while input is the initial position, setting up probability of going right as 0.5.
@@ -139,51 +139,142 @@ for (n in n_startpads){
 ```
 ## Question 4(b) Plot the proportion of games ending on the right bank against the starting pad.
 ```{r}
-#get result from previous section, store it as the proportion of games ends on the right bank
-#make p_right_bank a 7 digit vector for calculations
-p_right_bank<- numeric(7)
-#take values from hops 1-7, loop it
-for (n in 1:7) {
-  p_right_bank[n] <- results_Q4[[n]]$frog_stats["p_right_bank"]
-}
-
-plot(x = 1:7,
-     y = p_right_bank,
-     type = "b",
-     col = "red",
-     main = "Games ends on Right Bank against starting pad 1-7",
-     xlab = "Starting Pads",
-     ylab = "Proportion of games ending on the right bank")
+#plot the graphs with "result_Q4"
+plot_rb4b(results_Q4)
 ```
 ## Question 4(c) Plot the mean number of hops against the starting pad.
 ```{r}
-##make mean_hops a 7 digit vector for calculations
-mean_hops <- numeric(7)
-#loop again for taking out values
-for (n in 1:7) {
-  mean_hops[n] <- results_Q4[[n]]$frog_stats["mean_hops"]
-}
-#plot again
-plot(x = 1:7,
-     y = mean_hops,
-     type = "b",
-     col = "red",
-     main = "Mean Hops against starting pad 1-7",
-     xlab = "Starting Pads",
-     ylab = "Mean Hops")
-
+plot_rb4c(results_Q4)
 ```
 ## Question 4(d) Add error bars to both plots, showing 95% confidence intervals for the proportions and standard errors for the mean numbers of hops.
 ```{r 4d}
+#get CI values
+lower_ci <- numeric(7)
+upper_ci <- numeric(7)
+#use the code of 3a again but loop it in 1-7
+for (n in 1:7) {
+  #finding 95% CI and Histogram
+  nbankr <- sum(results_Q4[[n]]$banks == "right",na.rm = TRUE)
+  n_total <- length(results_Q4[[n]]$banks)
+  #using binomial testing with nbankr as x and ntotal as y
+  ci<- binom.test(
+    x = nbankr,
+    n = n_total,
+    conf.level = 0.95
+  )
+  
+  lower_ci[n] = ci$conf.int[1]
+  upper_ci[n] = ci$conf.int[2]
 
+}
+#plot graphs for proportions
+plot_rb4b(results_Q4)
+# Add 95% confidence interval error bars
+arrows(
+  x0 = 1:7,
+  y0 = lower_ci,
+  x1 = 1:7,
+  y1 = upper_ci,
+  angle = 90, code = 3, length = 0.05
+)
 
+#plot graphs for numbers of hops
+#from 4(a) get values of mean hops and SD
+mean_hops <- numeric(7)
+sd_hops <- numeric(7)
+
+for (n in 1:7){
+  mean_hops[n]<-results_Q4[[n]]$frog_stats["mean_hops"]
+  sd_hops[n]<- results_Q4[[n]]$frog_stats["sd_hops"]
+}
+#Calculate standard error for 1000 games
+se_hops <- sd_hops / sqrt(1000)
+#plot the graphs again
+plot_rb4c(results_Q4)
+
+# Add standard error bars
+arrows(x0 = 1:7,
+       y0 = mean_hops - se_hops,
+       x1 = 1:7,
+       y1 = mean_hops + se_hops,
+       angle = 90,
+       code = 3,
+       length = 0.05)
 
 ```
 
-## Question 5
-```{r}
+## Question 5 A windy day
+## 5(a) Report the proportion of games ending on the right bank (with a 95% confidence interval) and the mean and standard deviation of the number of hops for both games.
+```{r 5a}
+#Call Q3 equations with setting p_right to 0.7 as windy day
+results_Q5 <- simulate_frogs(n_sims= 1000, p_right = 0.7)
+#get comparison with fair day, and windy day
+fair =results_Q3$frog_stats
+windy =results_Q5$frog_stats
+
+#set up function to compare ci for fair and windy
+compare_ci <- list(results_Q3, results_Q5)
+#set up vector for 2 ci
+lower_ci <- numeric(2)
+upper_ci <- numeric(2)
+#loop through both cases
+for (n in 1:2) {
+  nbankr <- sum(compare_ci[[n]]$banks == "right", na.rm = TRUE)
+  n_total <- length(compare_ci[[n]]$banks)
+
+  ci <- binom.test(
+    x = nbankr,
+    n = n_total,
+    conf.level = 0.95
+  )
+
+  lower_ci[n] <- ci$conf.int[1]
+  upper_ci[n] <- ci$conf.int[2]
+}
+#return for values for comparison
+fair
+windy
+# Display both ci of fair and windy
+c(Fair_Lower = lower_ci[1],
+  Fair_Upper = upper_ci[1],
+  Windy_Lower = lower_ci[2],
+  Windy_Upper = upper_ci[2])
 
 ```
+## 5(b) Produce a plot comparing the distribution of the number of hops in the two games.
+```{r 5b}
+#output hops_vector form both simulations
+fair_hops <- results_Q3$hops_vector
+windy_hops <- results_Q5$hops_vector
+#list with histogram, while red is Fair game, blue border for Windy, preventing overlapping
+hist(fair_hops,col= "red",main="Fair Hops vs Windy Hops")
+hist(windy_hops,col = NA,border = "blue",add = TRUE)
+#add legend for the histogram
+legend("topright",
+       legend = c("Fair (p = 0.5)", "Windy (p = 0.7)"),
+       fill = c("red", "blue"))
+
+```
+## 5(c) Is the difference in the proportion of games ending on the right bank statistically significant? Use an appropriate test.
+```{r 5c}
+#get values of ending with Right bank
+fair_r <- sum(results_Q3$banks == "right", na.rm = TRUE)
+windy_r <- sum(results_Q5$banks == "right", na.rm = TRUE)
+
+#uses probability testing and T testing for fair days and windy days 
+test_Q5 <- prop.test(
+  x = c(fair_r, windy_r),
+  n = c(length(results_Q3$banks), length(results_Q5$banks))
+)
+t_test <- t.test(fair_hops, windy_hops)
+
+# Display test results
+test_Q5
+t_test
+
+```
+## 5(d)Explain why the wind changes the results in the way you observe.
+
 
 # Data Analysis: Maternal Health Risk
 
@@ -192,54 +283,145 @@ plot(x = 1:7,
 load("data/assess_data_1226.Rdata")
 ```
 
-## Question 6
-```{r 6aCodeComment}
+## Question 6 Commenting and fixing code
+## 6(a) Code Comment
+```{r 6aCodeCommenting, eval=FALSE}
+#load data set
 load("data/assess_data_1226.Rdata")
+#display structure of mh_data
 str(mh_data)
+#counting the duplicated age values
 sum(duplicated(mh_data$age))
-
+#getting a variable of risk_level is high
 mh_data$high_risk <- mh_data$risk_level == "high"
+#display a table with for high risk and non-high risk
+table(mh_data$high_risk)
+#box plot by high risk status
+boxplot(bs ~ high_risk, data = mh_data)
+#binomial regression glm, while argument high_risk is missing, re-add data=mh_data should work
+fit <- glm(high_risk ~ bs + systolic_bp, family = binomial)
+#summary of the binomial regression
+summary(fit)
+#calculate exponential result for the regression 
+exp(coef(fit))
+#calculate CI for the coefficient coefficients, this should be changed to exp(confint.default(fit)) as its log odds coefficient instead of log ratios
+or_ci <- confint.default(fit)
+#display CI
+or_ci
+```
+## 6(b) Updating Code
+```{r 6bCodeFixing}
+#keep the same loading
+load("data/assess_data_1226.Rdata")
+#structure checking
+str(mh_data)
+#if doing full data set duplicate checking, use "mh_data" instead of "mh_data$age"
+sum(duplicated(mh_data))
+#rename the search from "high" to "high risk", the previous one is setting all result to FALSE
+mh_data$high_risk <- mh_data$risk_level == "high risk"
 table(mh_data$high_risk)
 
 boxplot(bs ~ high_risk, data = mh_data)
-
-fit <- glm(high_risk ~ bs + systolic_bp, family = binomial)
+#add "data=mh_data" to let r terminal to specify the dataset for the binomial regression
+fit <- glm(high_risk ~ bs + systolic_bp, family = binomial, data=mh_data)
 summary(fit)
 exp(coef(fit))
 
-or_ci <- confint.default(fit)
-or_ci
-```
-
-```{r 6bCodeUpdate}
-load("data/assess_data_1226.Rdata")
-str(mh_data)
-sum(duplicated(mh_data$age))
-
-mh_data$high_risk <- mh_data$risk_level == "high"
-table(mh_data$high_risk)
-
-boxplot(bs ~ high_risk, data = mh_data)
-
-fit <- glm(high_risk ~ bs + systolic_bp, family = binomial)
-summary(fit)
-exp(coef(fit))
-
-or_ci <- confint.default(fit)
+or_ci <- exp(confint.default(fit))
 or_ci
 
 ```
 
-## Question 7
-```{r}
+## Question 7 Before any modelling, perform a quality control check of the data set.
+## 7(a) Data Checking before processing
+```{r 7a dataChecking}
+  #checking structure
+  str(mh_data)
+  #count duplicated record
+  duplicates <- sum(duplicated(mh_data))
+  print(duplicates)
+  #displaying all variables for checking in a histogram
+  vars<- c("age", "systolic_bp", "diastolic_bp", "bs", "body_temp","heart_rate")
+  
+  for (n in vars){
+    hist(mh_data[[n]], main =n)
+  }
+  
+  summary(mh_data)
 
 ```
-
-## Question 8
+## 7(b) Calling function "clean_maternal"
 ```{r}
-
+data_cleaned<-clean_maternal(mh_data)
+data_cleaned
+#double checking for data_cleaned, with structure, and double check duplicated data, or with values 0 in heart_rate and body_temp
+str(data_cleaned)
+sum(duplicated(data_cleaned))
+sum(data_cleaned$body_temp == 0, na.rm = TRUE)
+sum(data_cleaned$heart_rate == 0, na.rm = TRUE)
 ```
-## Question 9
+
+## Question 8 Blood glucose and high risk
+## Q8(a) Box plot comparing bs between high risk and other patients
+```{r Q8a BoxPlot}
+#get data high_risk patient's bs values
+highbs <- data_cleaned$bs[data_cleaned$high_risk==TRUE]
+#get others bs values 
+otherbs <- data_cleaned$bs[data_cleaned$high_risk==FALSE]
+
+#using box plot here for the exact comparison 
+boxplot(otherbs, highbs,main= "bs between High Risk patients and Others", xlab="risk", ylab="mmol/L")
+```
+
+## Q8 (b) Welch T testing
+```{r Q8b Ttesting}
+#getting summary of bs values for both group patients and the number of each group
+summary(highbs)
+summary(otherbs)
+length(highbs)
+length(otherbs)
+
+#Welch t test for both groups, using both mean is the same as null hypnosis
+t.test(highbs, otherbs)
+```
+## 8(c) Plotting with glm()
+```{r Q8c plotting}
+#fitting logistic model with glm()
+fit <- glm(high_risk ~ bs, family = binomial, data=data_cleaned)
+summary(fit)
+exp(coef(fit))
+
+or_ci <- exp(confint.default(fit))
+or_ci
+
+#Plot the observed data (high risk as 0/1) against blood glucose and add the fitted logistic regression curve
+ggplot(data_cleaned, aes(x= bs, y= as.numeric(high_risk)))+
+  geom_smooth(method = "glm", method.args = list(family = binomial),colour = "red")
+```
+
+## Question 9 Multiple logistic regression
+## 9(a) Getting all 6 numeric measurements and site as covariates
 ```{r}
+#get all 6 numeric measurements and site as covariates
+fit_Q9 <- glm(high_risk ~ age+ systolic_bp+ diastolic_bp+ bs+ body_temp+ heart_rate+ site, 
+              family = binomial, data = data_cleaned)
 
+summary(fit_Q9)
 ```
+## 9(b) Fit the same model to the uncleaned data 
+```{r Q9b}
+#load the mh data for original data
+og_data <- mh_data
+#add high risk to the table
+og_data$high_risk <- og_data$risk_level == "high risk"
+#fitting the same model to the original data
+og_fit <- glm(high_risk ~ age+ systolic_bp+ diastolic_bp+ bs+ body_temp+ heart_rate+ site, 
+              family = binomial, data = og_data)
+
+og_fit
+```
+```{r Q9bi}
+og_fit
+fit_Q9
+```
+## 9(c) Model Selection
